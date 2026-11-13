@@ -487,12 +487,11 @@ body.opened .hero .amp{animation:rise 1.2s cubic-bezier(.2,.7,.2,1) .55s both,sh
 
   <section class="wrap" id="rsvp">
     <p class="eyebrow">RSVP</p>
-    <h2>Will you join us?</h2>
+    <h2>Please join us</h2>
     <span class="divider"><i></i></span>
-    <p class="rsvp-note">One tap sends your reply to us on WhatsApp.</p>
+    <p class="rsvp-note">Your presence and blessings mean the world to us.</p>
     <div class="actions">
-      <a class="btn solid" id="rsvpYes" target="_blank" rel="noopener">Yes, I'll be there</a>
-      <a class="btn" id="rsvpNo" target="_blank" rel="noopener">Sorry, I can't make it</a>
+      <a class="btn solid" id="rsvpYes" target="_blank" rel="noopener">I'll be there to celebrate</a>
     </div>
     <p class="small">Or message us at <span class="phone" id="phone"></span></p>
   </section>
@@ -557,6 +556,21 @@ const INVITE = {
   signoff: ["The Bride-to-be's Family", "The Groom-to-be's Family"],
 };
 /* ================================== */
+
+/* RSVP number from the link: ?wa=9876543210 (or ?phone= / ?whatsapp=) sends replies to that WhatsApp number.
+   10 digits get +91 added; anything missing or invalid falls back to the default number above. */
+const WA_FROM_LINK = (function(){
+  try {
+    const q = new URLSearchParams(location.search);
+    let n = (q.get("wa") || q.get("phone") || q.get("whatsapp") || "").replace(/\D/g, "");
+    if (n.length === 11 && n[0] === "0") n = n.slice(1);
+    if (n.length === 10) n = "91" + n;
+    if (n.length < 11 || n.length > 15) return "";
+    INVITE.whatsapp = n;
+    INVITE.phoneLabel = n.length === 12 && n.startsWith("91") ? `+91 ${n.slice(2, 7)} ${n.slice(7)}` : "+" + n;
+    return n;
+  } catch (e) { return ""; }
+})();
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -665,12 +679,11 @@ $("familyList").innerHTML = INVITE.families.map(f => `<div><h3>${esc(f.title)}</
 $("tiles").innerHTML = INVITE.info.map(f => `<div class="tile">${ICONS[f.icon]||""}<h3>${esc(f.title)}</h3><p>${esc(f.text)}</p></div>`).join("");
 
 const wa = msg => "https://wa.me/" + INVITE.whatsapp + "?text=" + encodeURIComponent(msg);
-$("rsvpYes").href = wa(`Yes! I'll be at ${INVITE.bride} & ${INVITE.groom}'s engagement on ${INVITE.dateLabel}.`);
-$("rsvpNo").href = wa(`Sorry, I can't make it to ${INVITE.bride} & ${INVITE.groom}'s engagement. Sending my blessings!`);
+$("rsvpYes").href = wa(`Hi ${INVITE.bride} & ${INVITE.groom}! I'll be there on 20 November to celebrate with you both.`);
 $("phone").textContent = INVITE.phoneLabel;
 // Once hosted (e.g. GitHub Pages), share and QR point at the page's own address; on claude.ai or a local file, at INVITE.inviteUrl
 const shareUrl = /^https?:$/.test(location.protocol) && !/(^|\.)claude\.ai$|^localhost$|^127\./.test(location.hostname)
-  ? location.origin + location.pathname : INVITE.inviteUrl;
+  ? location.origin + location.pathname + (WA_FROM_LINK ? "?wa=" + WA_FROM_LINK : "") : INVITE.inviteUrl;
 $("waShare").href = "https://wa.me/?text=" + encodeURIComponent(`You're invited to ${INVITE.bride} & ${INVITE.groom}'s engagement on ${INVITE.dateLabel}: ${shareUrl}`);
 $("blessingText").textContent = "“" + INVITE.blessing + "”";
 $("signoff").innerHTML = INVITE.signoff.map(esc).join("<br>");
